@@ -90,7 +90,12 @@ public class UserInterface {
         System.out.println("Tietokanta luotu!");
     }
 
-    public static void addNameOfThePlace(String name) {
+    public static void addNameOfThePlace(String name) throws SQLException {
+        
+        Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+        PreparedStatement p = db.prepareStatement("INSERT INTO Locations (name) VALUES (?)");
+        p.setString(1, name);
+        p.executeUpdate();
         System.out.println("Paikka " + name + " lisätty");
     }
 
