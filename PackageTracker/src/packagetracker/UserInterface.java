@@ -5,6 +5,7 @@
  */
 package packagetracker;
 
+import java.sql.*;
 import java.util.Scanner;
 
 /**
@@ -13,42 +14,34 @@ import java.util.Scanner;
  */
 public class UserInterface {
 
-    public void start(Scanner reader) {
+    public void start(Scanner reader) throws SQLException {
         while (true) {
             System.out.print("Valitse toiminto (1-9) / lopeta: ");
             String command = reader.nextLine();
 
             if (command.equals("1")) { //creating the db
                 createDatabase();
-            }
-
-            else if (command.equals("lopeta")) { // ending application
+            } else if (command.equals("lopeta")) { // ending application
                 System.out.println("Heippa");
                 break;
-            }
-
-            else if (command.equals("2")) { //creating a new location
+            } else if (command.equals("2")) { //creating a new location
                 System.out.print("Anna paikan nimi: ");
                 String what = reader.nextLine();
                 addNameOfThePlace(what);
                 continue;
-            }
-
-            else if (command.equals("3")) { //Creating a new customer
+            } else if (command.equals("3")) { //Creating a new customer
                 System.out.print("Anna asiakkaan nimi? ");
                 String what = reader.nextLine();
                 addNameOfTheCustomer(what);
                 continue;
-            }
-            else if (command.equals("4")) { // adding a package to db with customer name and tracking code. Customer has to exist in db.
+            } else if (command.equals("4")) { // adding a package to db with customer name and tracking code. Customer has to exist in db.
                 System.out.print("Anna paketin seurantakoodi ");
                 String code = reader.nextLine();
                 System.out.print("Anna asiakkaan nimi: ");
                 String name = reader.nextLine();
                 addNewPackageToDb(code, name);
                 continue;
-            }
-            else if (command.equals("5")) { // adding a new event on db. Tracking code, location and description has been given. Location has to exit in db.
+            } else if (command.equals("5")) { // adding a new event on db. Tracking code, location and description has been given. Location has to exit in db.
                 System.out.print("Anna paketin seurantakoodi ");
                 String code = reader.nextLine();
                 System.out.print("Anna tapahtuman paikka: ");
@@ -57,44 +50,43 @@ public class UserInterface {
                 String description = reader.nextLine();
                 addNewEventToDb(code, location, description);
                 continue;
-            }
-            else if (command.equals("6")) { //Get all events with tracking code
+            } else if (command.equals("6")) { //Get all events with tracking code
                 System.out.print("Anna paketin seurantakoodi: ");
                 String code = reader.nextLine();
                 getAllEventsWithTrackingCode(code);
                 continue;
-            }
-
-            else if (command.equals("7")) { //Get all packages of a given customer with number of events. (tracking code + no. events
+            } else if (command.equals("7")) { //Get all packages of a given customer with number of events. (tracking code + no. events
                 System.out.print("Anna asiakkaan nimi: ");
                 String name = reader.nextLine();
                 getAllPackagesOfCustomer(name);
                 continue;
-            }
-            else if (command.equals("8")) { //Get no. events from a location at given day
+            } else if (command.equals("8")) { //Get no. events from a location at given day
                 System.out.print("Anna paikan nimi: ");
                 String name = reader.nextLine();
                 System.out.print("Anna päivämäärä: ");
                 String date = reader.nextLine();
                 getNumberOfEventsFromLocationAtGivenDay(name, date);
                 continue;
-            }
-            
-            else if (command.equals("9")) { //Do performance test
-                
+            } else if (command.equals("9")) { //Do performance test
+
                 doPerformanceTest();
                 continue;
+            } else {
+                System.out.println("Komento ei tuettu");
             }
-            
-            else {
-                    System.out.println("Komento ei tuettu");
-                    }
-            
+
         }
 
     }
 
-    public static void createDatabase() {
+    public static void createDatabase() throws SQLException {
+        Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+        Statement s = db.createStatement();
+        s.execute("CREATE TABLE Locations (id INTEGER PRIMARY KEY, name TEXT)");
+        s.execute("CREATE TABLE Customers (id INTEGER PRIMARY KEY, name TEXT)");
+        s.execute("CREATE TABLE Packages (id INTEGER PRIMARY KEY, customer_id INTEGER, scan_code INTEGER)");
+        s.execute("CREATE TABLE Events (id INTEGER PRIMARY KEY, description TEXT, created_at TEXT, location_id INTEGER, package_id INTEGER)");
+
         System.out.println("Tietokanta luotu!");
     }
 
@@ -123,11 +115,11 @@ public class UserInterface {
     }
 
     public static void doPerformanceTest() {
-        System.out.println("lets to the performance test...");  
+        System.out.println("lets to the performance test...");
     }
 
     public static void getNumberOfEventsFromLocationAtGivenDay(String name, String date) {
-        System.out.println("Paikalla " + name + " löytyi x määrä tapahtumia" );
+        System.out.println("Paikalla " + name + " löytyi x määrä tapahtumia");
     }
 
 }
