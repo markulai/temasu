@@ -91,12 +91,17 @@ public class UserInterface {
     }
 
     public static void addNameOfThePlace(String name) throws SQLException {
-        
-        Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
-        PreparedStatement p = db.prepareStatement("INSERT INTO Locations (name) VALUES (?)");
-        p.setString(1, name);
-        p.executeUpdate();
-        System.out.println("Paikka " + name + " lisätty");
+
+        if (doesValueExistAlreadyFromLocations(name)) {
+            System.out.println("Paikka " + name + " löytyy jo!!");
+        } else {
+            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+            PreparedStatement p = db.prepareStatement("INSERT INTO Locations (name) VALUES (?)");
+            p.setString(1, name);
+            p.executeUpdate();
+            System.out.println("Paikka " + name + " lisätty");
+        }
+
     }
 
     public static void addNameOfTheCustomer(String name) {
@@ -125,6 +130,20 @@ public class UserInterface {
 
     public static void getNumberOfEventsFromLocationAtGivenDay(String name, String date) {
         System.out.println("Paikalla " + name + " löytyi x määrä tapahtumia");
+    }
+
+    public static boolean doesValueExistAlreadyFromLocations(String value) throws SQLException {
+        Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+        PreparedStatement p = db.prepareStatement("SELECT name FROM Locations WHERE name=?");
+        p.setString(1, value);
+
+        ResultSet r = p.executeQuery();
+        if (r.next()) {
+
+            return true;
+        }
+
+        return false;
     }
 
 }
