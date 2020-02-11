@@ -5,6 +5,7 @@
  */
 package packagetracker;
 
+import java.sql.SQLException;
 import java.util.Scanner;
 
 /**
@@ -16,10 +17,10 @@ public class PackageTracker {
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
         UserInterface ui = new UserInterface();
-        Scanner lukija = new Scanner(System.in);
-        ui.start(lukija);
+        Scanner reader = new Scanner(System.in);
+        ui.start(reader);
     }
     
 }
