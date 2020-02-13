@@ -6,6 +6,8 @@
 package packagetracker;
 
 import java.sql.*;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -29,19 +31,19 @@ public class UserInterface {
                 System.out.print("Anna paikan nimi: ");
                 String what = reader.nextLine();
                 addNameOfThePlace(what);
-                
+
             } else if (command.equals("3")) { //Creating a new customer
                 System.out.print("Anna asiakkaan nimi? ");
                 String what = reader.nextLine();
                 addNameOfTheCustomer(what);
-                
+
             } else if (command.equals("4")) { // adding a package to db with customer name and tracking code. Customer has to exist in db.
                 System.out.print("Anna paketin seurantakoodi ");
                 String code = reader.nextLine();
                 System.out.print("Anna asiakkaan nimi: ");
                 String name = reader.nextLine();
                 addNewPackageToDb(code, name);
-                
+
             } else if (command.equals("5")) { // adding a new event on db. Tracking code, location and description has been given. Location has to exit in db.
                 System.out.print("Anna paketin seurantakoodi ");
                 String code = reader.nextLine();
@@ -50,28 +52,28 @@ public class UserInterface {
                 System.out.print("Anna tapahtuman kuvaus: ");
                 String description = reader.nextLine();
                 addNewEventToDb(code, location, description);
-                
+
             } else if (command.equals("6")) { //Get all events with tracking code
                 System.out.print("Anna paketin seurantakoodi: ");
                 String code = reader.nextLine();
                 getAllEventsWithTrackingCode(code);
-                
+
             } else if (command.equals("7")) { //Get all packages of a given customer with number of events. (tracking code + no. events
                 System.out.print("Anna asiakkaan nimi: ");
                 String name = reader.nextLine();
                 getAllPackagesOfCustomer(name);
-                
+
             } else if (command.equals("8")) { //Get no. events from a location at given day
                 System.out.print("Anna paikan nimi: ");
                 String name = reader.nextLine();
                 System.out.print("Anna päivämäärä: ");
                 String date = reader.nextLine();
                 getNumberOfEventsFromLocationAtGivenDay(name, date);
-                
+
             } else if (command.equals("9")) { //Do performance test
 
                 doPerformanceTest();
-                
+
             } else {
                 System.out.println("Komento ei tuettu");
             }
@@ -119,12 +121,12 @@ public class UserInterface {
     }
 
     public static void addNewPackageToDb(String code, String name) throws SQLException {
-         if (!doesValueExistAlreadyFromCustomers(name)) {
-             System.out.println("Asiakasta " + name + " ei löydy!");
+        if (!doesValueExistAlreadyFromCustomers(name)) {
+            System.out.println("Asiakasta " + name + " ei löydy!");
         } else if (doesCodeAlreadyExistFromPackages(code)) {
-           System.out.println("Pakettikoodilla " + code + " löytyy jo paketti!");
-        } else { 
-        
+            System.out.println("Pakettikoodilla " + code + " löytyy jo paketti!");
+        } else {
+
             Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
 
             //Get customer ID of customer name
@@ -135,28 +137,28 @@ public class UserInterface {
             if (ar.next()) {
                 customer_id = ar.getInt("id");
             }
-            System.out.println("Customer Id = " + customer_id); 
+
             //insert tracking code with user 
-                             
             PreparedStatement p = db.prepareStatement("INSERT INTO Packages(scan_code,customer_id) VALUES (?,?)");
-         
-            p.setString(1,code);
-            p.setInt(2,customer_id);
-            
+
+            p.setString(1, code);
+            p.setInt(2, customer_id);
+
             p.executeUpdate();
-            System.out.println("Paketti " + code +  ", asiakkaalle: " + name + " asiakas ID:lle: "  + customer_id + "lisatty!");
-             
+            db.close();
+            System.out.println("Paketti " + code + ", asiakkaalle: " + name + ", asiakas ID:lle: " + customer_id + " lisatty!");
+
         }
 
     }
 
     public static void addNewEventToDb(String code, String location, String description) throws SQLException {
-        if (!doesValueExistAlreadyFromLocations(location)){           
-        System.out.println("Paikkaa " + location + " ei löydy!");
+        if (!doesValueExistAlreadyFromLocations(location)) {
+            System.out.println("Paikkaa " + location + " ei löydy!");
         } else if (!doesCodeAlreadyExistFromPackages(code)) {
-           System.out.println("Pakettikoodilla " + code + " ei löydy pakettia!");
-        } else { 
-        
+            System.out.println("Pakettikoodilla " + code + " ei löydy pakettia!");
+        } else {
+
             Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
 
             //Get location_id ID location
@@ -164,46 +166,60 @@ public class UserInterface {
             PreparedStatement a = db.prepareStatement("SELECT id FROM locations WHERE name=?");
             a.setString(1, location);
             ResultSet ar = a.executeQuery();
-            
+
             if (ar.next()) {
                 location_id = ar.getInt("id");
             }
             db.close();
-            
+
             //Get Package_id from code
             Connection dba = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
             int package_id = 0;
-             PreparedStatement pa = dba.prepareStatement("SELECT id FROM Packages WHERE scan_code=?");
+            PreparedStatement pa = dba.prepareStatement("SELECT id FROM Packages WHERE scan_code=?");
             pa.setString(1, code);
             ResultSet par = pa.executeQuery();
             if (par.next()) {
                 package_id = par.getInt("id");
             }
             dba.close();
-            
+
+            //Getting the time stamp
+            Calendar cal = Calendar.getInstance();
+            cal.getTime();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+            String created_at = sdf.format(cal.getTime());
+
             //insert event with timestamp, package_id, location_id and description
-            
-            String created_at = "2020-02-10 19:29:05.123";
-            
             Connection dbb = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
             PreparedStatement p = dbb.prepareStatement("INSERT INTO Events (description,created_at,location_id,package_id) VALUES (?,?,?,?)");
-         
-            p.setString(1,description);
-            p.setString(2,created_at);
-            p.setInt(3,location_id);
-            p.setInt(4,package_id);
-            
+
+            p.setString(1, description);
+            p.setString(2, created_at);
+            p.setInt(3, location_id);
+            p.setInt(4, package_id);
+
             p.executeUpdate();
             System.out.println("Tapahtuma, " + description + " paikalle " + location + " ja seurantakoodilla: " + code + " ajalla: " + created_at + " lisätty!");
-             
+
         }
-        
-        
-        
+
     }
 
-    public static void getAllEventsWithTrackingCode(String code) {
-        System.out.println("Koodilla " + code + " on seuraavia tapahtumia");
+    public static void getAllEventsWithTrackingCode(String code) throws SQLException {
+        if (!doesCodeAlreadyExistFromPackages(code)) {
+            System.out.println("Seurantakoodia " + code + " ei loytynyt!");
+        } else {
+            System.out.println("Koodilla " + code + " on seuraavia tapahtumia");
+            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+            Statement s = db.createStatement();
+            ResultSet r = s.executeQuery("SELECT Events.created_at, Locations.name, Events.description FROM Events, Locations, Packages WHERE Events.package_id = Packages.id AND Locations.id = Events.location_id");
+
+            while (r.next()) {
+                System.out.println(r.getString("created_at") + ", " + r.getString("name") + ", " + r.getString("description"));
+            }
+             db.close();
+        }
+
     }
 
     public static void getAllPackagesOfCustomer(String name) {
