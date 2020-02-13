@@ -211,9 +211,10 @@ public class UserInterface {
         } else {
             System.out.println("Koodilla " + code + " on seuraavia tapahtumia");
             Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
-            Statement s = db.createStatement();
-            ResultSet r = s.executeQuery("SELECT Events.created_at, Locations.name, Events.description FROM Events, Locations, Packages WHERE Events.package_id = Packages.id AND Locations.id = Events.location_id");
-
+            PreparedStatement p = db.prepareStatement("SELECT Events.created_at, Locations.name, Events.description FROM Events, Locations, Packages WHERE Events.package_id = Packages.id AND Locations.id = Events.location_id AND Packages.scan_code = ? ");
+            p.setString(1,code);
+            ResultSet r = p.executeQuery();
+            
             while (r.next()) {
                 System.out.println(r.getString("created_at") + ", " + r.getString("name") + ", " + r.getString("description"));
             }
