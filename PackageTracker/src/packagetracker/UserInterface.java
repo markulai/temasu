@@ -19,7 +19,7 @@ public class UserInterface {
 
     public void start(Scanner reader) throws SQLException {
         while (true) {
-            System.out.print("Valitse toiminto (1-9) / lopeta: ");
+            System.out.print("Valitse toiminto (1-9) / lopeta / komennot: ");
             String command = reader.nextLine();
 
             if (command.equals("1")) { //creating the db
@@ -27,6 +27,17 @@ public class UserInterface {
             } else if (command.equals("lopeta")) { // ending application
                 System.out.println("Heippa");
                 break;
+            } else if (command.equals("komennot")) { // ending application
+                System.out.println("1 - Luo kanta (ei onnistu jos kanta on jo luotu");
+                System.out.println("2 - Lisää uusi paikka tietokantaan");
+                System.out.println("3 - Lisää uusi asiakas tietokantaan");
+                System.out.println("4 - Lisää uusi paketti tietokantaan");
+                System.out.println("5 - Lisää uusi tapahtuma tietokantaan");
+                System.out.println("6 - Hae kaikki tapahtumat pakettiin liittyen");
+                System.out.println("7 - Hae kaikki asiakkaan paketit ja niihin liittyvien tapahtumien määrä");
+                System.out.println("8 - Hae annetusta paikasta tapahtumien määrä tiettynä päivänä");
+                System.out.println("9 - Suorita tietokannan tehokkuustesti");
+                
             } else if (command.equals("2")) { //creating a new location
                 System.out.print("Anna paikan nimi: ");
                 String what = reader.nextLine();
