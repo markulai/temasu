@@ -234,8 +234,22 @@ public class UserInterface {
 
     }
 
-    public static void getAllPackagesOfCustomer(String name) {
-        System.out.println("Asiakkaan " + name + " paketit:");
+    public static void getAllPackagesOfCustomer(String name) throws SQLException {
+          if (!doesValueExistAlreadyFromCustomers(name)) {
+            System.out.println("Asiakasta  " + name + " ei loytynyt!");
+        } else {
+            System.out.println("Asiakkaalla " + name + " on seuraavia paketteja");
+            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+            PreparedStatement p = db.prepareStatement("SELECT Packages.scan_code, COUNT(Events.id) FROM Customers, Packages, Events WHERE Events.package_id = Packages.id AND Packages.customer_id = Customers.id AND Customers.name = ? ");
+            p.setString(1,name);
+            ResultSet r = p.executeQuery();
+
+            while (r.next()) {
+                System.out.println(r.getString("scan_code") + ", " + r.getString("COUNT(Events.id)" + " tapahtumaa"));
+            }
+             db.close();
+        }
+        
     }
 
     public static void doPerformanceTest() {
