@@ -257,15 +257,22 @@ public class UserInterface {
     }
 
     public static void getNumberOfEventsFromLocationAtGivenDay(String name, String date) throws SQLException {
-        String modified_date = date + "%";
-        //if (no)
+        String[] arrOfStr = date.split("\\.");
+        if (arrOfStr[1].length()==1){
+            arrOfStr[1] = "0" + arrOfStr[1];
+        }
+        
+        if (arrOfStr[0].length()==1){
+            arrOfStr[0] = "0" + arrOfStr[0];
+        }
+        
+        String modified_date = arrOfStr[0] + "." + arrOfStr[1] + "." + arrOfStr[2] + "%";
+        
         
         if (!doesValueExistAlreadyFromLocations(name)) {
             System.out.println("Paikkaa " + name + " ei loytynyt!");
         } 
          
-         //else if (jos paikalla ja päivällä ei ole tapahtumia)
-         //muuta date sopivan määrämuotoiseksi.
          
          else {
             Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
