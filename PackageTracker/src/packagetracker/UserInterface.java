@@ -245,7 +245,7 @@ public class UserInterface {
             ResultSet r = p.executeQuery();
 
             while (r.next()) {
-                System.out.println(r.getString("scan_code") + ", " + r.getString("COUNT(Events.id)" + " tapahtumaa"));
+                System.out.println(r.getString("scan_code") + ", " + r.getString("COUNT(Events.id)") + " tapahtumaa");
             }
              db.close();
         }
@@ -256,8 +256,31 @@ public class UserInterface {
         System.out.println("lets to the performance test...");
     }
 
-    public static void getNumberOfEventsFromLocationAtGivenDay(String name, String date) {
-        System.out.println("Paikalla " + name + " löytyi x määrä tapahtumia");
+    public static void getNumberOfEventsFromLocationAtGivenDay(String name, String date) throws SQLException {
+        String modified_date = date + "%";
+        //if (no)
+        
+        if (!doesValueExistAlreadyFromLocations(name)) {
+            System.out.println("Paikkaa " + name + " ei loytynyt!");
+        } 
+         
+         //else if (jos paikalla ja päivällä ei ole tapahtumia)
+         //muuta date sopivan määrämuotoiseksi.
+         
+         else {
+            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+            //SELECT COUNT(Events.id) FROM Events, Locations WHERE Events.location_id = Locations.id AND Locations.name = 'Oulu' AND Events.created_at LIKE '%14.02.2020%';
+            PreparedStatement p = db.prepareStatement("SELECT COUNT(Events.id) FROM Events, Locations WHERE Events.location_id = Locations.id AND Locations.name = ? AND Events.created_at LIKE ? ");
+            p.setString(1,name);
+            p.setString(2, modified_date);
+            ResultSet r = p.executeQuery();
+
+            while (r.next()) {
+                System.out.println("Tapahtumien määrä: " + r.getInt("COUNT(Events.id)"));
+            }
+             db.close();
+        }
+        
     }
 
     public static boolean doesValueExistAlreadyFromLocations(String value) throws SQLException {
