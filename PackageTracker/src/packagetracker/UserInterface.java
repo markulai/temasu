@@ -5,7 +5,9 @@
  */
 package packagetracker;
 
+import java.io.File;
 import java.sql.*;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Random;
@@ -123,22 +125,34 @@ public class UserInterface {
     }
 
     public static void createDatabase() throws SQLException {
-        Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
-        Statement s = db.createStatement();
-        s.execute("CREATE TABLE Locations (id INTEGER PRIMARY KEY, name TEXT UNIQUE)");
-        s.execute("CREATE TABLE Customers (id INTEGER PRIMARY KEY, name TEXT UNIQUE)");
-        s.execute("CREATE TABLE Packages (id INTEGER PRIMARY KEY, customer_id INTEGER REFERENCES Customers, scan_code TEXT UNIQUE)");
-        s.execute("CREATE TABLE Events (id INTEGER PRIMARY KEY, description TEXT, created_at TEXT, location_id INTEGER REFERENCES Locations, package_id INTEGER REFERENCES Packages)");
+        File file = new File("packagetracker.db");
 
-        System.out.println("Tietokanta luotu!");
+        if (file.exists()) {
+            System.out.println("Kanta löytyy jo!");
+
+        } else {
+            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+            Statement s = db.createStatement();
+            s.execute("CREATE TABLE Locations (id INTEGER PRIMARY KEY, name TEXT UNIQUE)");
+            s.execute("CREATE TABLE Customers (id INTEGER PRIMARY KEY, name TEXT UNIQUE)");
+            s.execute("CREATE TABLE Packages (id INTEGER PRIMARY KEY, customer_id INTEGER REFERENCES Customers, scan_code TEXT UNIQUE)");
+            s.execute("CREATE TABLE Events (id INTEGER PRIMARY KEY, description TEXT, created_at TEXT, location_id INTEGER REFERENCES Locations, package_id INTEGER REFERENCES Packages)");
+            s.execute("CREATE INDEX idx_package_id ON Events (package_id)");
+            System.out.println("Tietokanta luotu!");
+        }
+
     }
 
     public static void addNameOfThePlace(String name) throws SQLException {
+        File file = new File("packagetracker.db");
 
-        if (doesValueExistAlreadyFromLocations(name)) {
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
+        } else if (doesValueExistAlreadyFromLocations(name)) {
             System.out.println("VIRHE: Paikka " + name + " löytyy jo!!");
         } else {
             Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+
             PreparedStatement p = db.prepareStatement("INSERT INTO Locations (name) VALUES (?)");
             p.setString(1, name);
             p.executeUpdate();
@@ -148,7 +162,11 @@ public class UserInterface {
     }
 
     public static void addNameOfTheCustomer(String name) throws SQLException {
-        if (doesValueExistAlreadyFromCustomers(name)) {
+        File file = new File("packagetracker.db");
+
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
+        } else if (doesValueExistAlreadyFromCustomers(name)) {
             System.out.println("VIRHE: Asiakas " + name + " löytyy jo!!");
         } else {
             Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
@@ -161,7 +179,11 @@ public class UserInterface {
     }
 
     public static void addNewPackageToDb(String code, String name) throws SQLException {
-        if (!doesValueExistAlreadyFromCustomers(name)) {
+        File file = new File("packagetracker.db");
+
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
+        } else if (!doesValueExistAlreadyFromCustomers(name)) {
             System.out.println("VIRHE: Asiakasta " + name + " ei löydy!");
         } else if (doesCodeAlreadyExistFromPackages(code)) {
             System.out.println("VIRHE: Pakettikoodilla " + code + " löytyy jo paketti!");
@@ -193,7 +215,11 @@ public class UserInterface {
     }
 
     public static void addNewEventToDb(String code, String location, String description) throws SQLException {
-        if (!doesValueExistAlreadyFromLocations(location)) {
+        File file = new File("packagetracker.db");
+
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
+        } else if (!doesValueExistAlreadyFromLocations(location)) {
             System.out.println("VIRHE: Paikkaa " + location + " ei löydy!");
         } else if (!doesCodeAlreadyExistFromPackages(code)) {
             System.out.println("VIRHE: Pakettikoodilla " + code + " ei löydy pakettia!");
@@ -246,7 +272,11 @@ public class UserInterface {
     }
 
     public static void getAllEventsWithTrackingCode(String code) throws SQLException {
-        if (!doesCodeAlreadyExistFromPackages(code)) {
+        File file = new File("packagetracker.db");
+
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
+        } else if (!doesCodeAlreadyExistFromPackages(code)) {
             System.out.println("VIRHE: Seurantakoodia " + code + " ei loytynyt!");
         } else {
             System.out.println("Koodilla " + code + " on seuraavia tapahtumia");
@@ -264,7 +294,11 @@ public class UserInterface {
     }
 
     public static void getAllPackagesOfCustomer(String name) throws SQLException {
-        if (!doesValueExistAlreadyFromCustomers(name)) {
+        File file = new File("packagetracker.db");
+
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
+        } else if (!doesValueExistAlreadyFromCustomers(name)) {
             System.out.println("VIRHE: Asiakasta  " + name + " ei loytynyt!");
         } else {
             System.out.println("Asiakkaalla " + name + " on seuraavia paketteja");
@@ -282,129 +316,155 @@ public class UserInterface {
     }
 
     public static void doPerformanceTest() throws SQLException {
-        System.out.println("lets to the performance test...");
+        File file = new File("packagetracker.db");
 
-        Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
-        Statement s = db.createStatement();
-        s.execute("BEGIN TRANSACTION");
+        if (!file.exists()) {
+            System.out.println("Kanta pitää ensin luoda!");
 
-        long aika1 = System.nanoTime();
-        PreparedStatement p1 = db.prepareStatement("INSERT INTO Locations (name) VALUES (?)");
-        for (int i = 1; i < 1001; i++) {
-            p1.setString(1, "P" + i);
-            p1.executeUpdate();
-        }
-        long aika2 = System.nanoTime();
-        System.out.println("Aikaa kului paikkojen luomiseen: " + (aika2 - aika1) / 1e9 + " sekuntia");
+        } else {
+            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+            Statement s = db.createStatement();
+            s.execute("BEGIN TRANSACTION");
 
-        long aika3 = System.nanoTime();
-        PreparedStatement p2 = db.prepareStatement("INSERT INTO Customers (name) VALUES (?)");
-        for (int i = 1; i < 1001; i++) {
-            p2.setString(1, "A" + i);
-            p2.executeUpdate();
-        }
-        long aika4 = System.nanoTime();
-        System.out.println("Aikaa kului asiakkaiden luomiseen: " + (aika4 - aika3) / 1e9 + " sekuntia");
+            long aika1 = System.nanoTime();
+            PreparedStatement p1 = db.prepareStatement("INSERT INTO Locations (name) VALUES (?)");
+            for (int i = 1; i < 1001; i++) {
+                p1.setString(1, "P" + i);
+                p1.executeUpdate();
+            }
+            long aika2 = System.nanoTime();
+            System.out.println("Aikaa kului paikkojen luomiseen: " + (aika2 - aika1) / 1e9 + " sekuntia");
 
-        long aika5 = System.nanoTime();
-        PreparedStatement p3 = db.prepareStatement("INSERT INTO Packages (customer_id, scan_code) VALUES (?,?)");
-        for (int i = 1; i < 1001; i++) {
-            int random = ThreadLocalRandom.current().nextInt(1000);
-            p3.setInt(1, random);
-            p3.setString(2, "PACKAGE" + i);
-            p3.executeUpdate();
-        }
-        long aika6 = System.nanoTime();
-        System.out.println("Aikaa kului pakettien luomiseen: " + (aika6 - aika5) / 1e9 + " sekuntia");
+            long aika3 = System.nanoTime();
+            PreparedStatement p2 = db.prepareStatement("INSERT INTO Customers (name) VALUES (?)");
+            for (int i = 1; i < 1001; i++) {
+                p2.setString(1, "A" + i);
+                p2.executeUpdate();
+            }
+            long aika4 = System.nanoTime();
+            System.out.println("Aikaa kului asiakkaiden luomiseen: " + (aika4 - aika3) / 1e9 + " sekuntia");
 
-        long aika7 = System.nanoTime();
-        PreparedStatement p = db.prepareStatement("INSERT INTO Events (description, created_at, location_id, package_id) VALUES (?,?,?,?)");
-        for (int i = 1; i < 1000001; i++) {
-            int random = ThreadLocalRandom.current().nextInt(1000);
-            int random_package = ThreadLocalRandom.current().nextInt(1000);
-            Calendar cal = Calendar.getInstance();
-            cal.getTime();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            String created_at = sdf.format(cal.getTime());
+            long aika5 = System.nanoTime();
+            PreparedStatement p3 = db.prepareStatement("INSERT INTO Packages (customer_id, scan_code) VALUES (?,?)");
 
-            p.setString(1, "Random Tapahtuma " + random);
-            p.setString(2, created_at);
-            p.setInt(3, random);
-            p.setInt(4, random_package);
-            p.executeUpdate();
-        }
-        long aika8 = System.nanoTime();
-        System.out.println("Aikaa kului tapahtumien luomiseen: " + (aika8 - aika7) / 1e9 + " sekuntia");
+            for (int i = 1; i < 1001; i++) {
+                int random = ThreadLocalRandom.current().nextInt(1000);
+                p3.setInt(1, random);
+                p3.setString(2, "PACKAGE" + i);
+                p3.executeUpdate();
+            }
+            long aika6 = System.nanoTime();
+            System.out.println("Aikaa kului pakettien luomiseen: " + (aika6 - aika5) / 1e9 + " sekuntia");
 
-        s.execute("COMMIT");
-        System.out.println("Kamat on kannassa!");
+            long aika7 = System.nanoTime();
+            PreparedStatement p = db.prepareStatement("INSERT INTO Events (description, created_at, location_id, package_id) VALUES (?,?,?,?)");
+            for (int i = 1; i < 1000001; i++) { //Should be 1000001
+                int random = ThreadLocalRandom.current().nextInt(1000);
+                int random_package = ThreadLocalRandom.current().nextInt(1000);
+                Calendar cal = Calendar.getInstance();
+                cal.getTime();
+                SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+                String created_at = sdf.format(cal.getTime());
 
-        //Thousand queries where number of packages of some customer are retrieved
-        long aika9 = System.nanoTime();
-        PreparedStatement p5 = db.prepareStatement("SELECT Packages.scan_code, COUNT(Events.id) FROM Customers, Packages, Events WHERE Events.package_id = Packages.id AND Packages.customer_id = Customers.id AND Customers.name = ? ");
-        for (int i = 1; i < 1001; i++) {
-            int random = ThreadLocalRandom.current().nextInt(1000);
-            String name = "A" + random;
-            p5.setString(1, name);
-            p5.executeQuery();
-        }
-        long aika10 = System.nanoTime();
-        System.out.println("Aikaa kului pakettien hakemiseen: " + (aika10 - aika9) / 1e9 + " sekuntia");
+                p.setString(1, "Random Tapahtuma " + random);
+                p.setString(2, created_at);
+                p.setInt(3, random);
+                p.setInt(4, random_package);
+                p.executeUpdate();
+            }
+            long aika8 = System.nanoTime();
+            System.out.println("Aikaa kului tapahtumien luomiseen: " + (aika8 - aika7) / 1e9 + " sekuntia");
 
-        //Thousand queries where events of some packages are retrieved
-        long aika11 = System.nanoTime();
+            s.execute("COMMIT");
 
-        PreparedStatement p6 = db.prepareStatement("SELECT Events.created_at, Locations.name, Events.description FROM Events, Locations, Packages WHERE Events.package_id = Packages.id AND Locations.id = Events.location_id AND Packages.scan_code = ? ");
-        for (int i = 1; i < 1001; i++) {
-            int random = ThreadLocalRandom.current().nextInt(100);
-            String code = "PACKAGE" + random;
-            if (doesCodeAlreadyExistFromPackages(code)) {
-                p6.setString(1, code);
-                p6.executeQuery();
-                /*ResultSet r = p6.executeQuery();
+            //Thousand queries where number of packages of some customer are retrieved
+            long aika9 = System.nanoTime();
+            PreparedStatement p5 = db.prepareStatement("SELECT Packages.scan_code, COUNT(Events.id) FROM Customers, Packages, Events WHERE Events.package_id = Packages.id AND Packages.customer_id = Customers.id AND Customers.name = ? ");
+            for (int i = 1; i < 1001; i++) {
+                int random = ThreadLocalRandom.current().nextInt(1000);
+                String name = "A" + random;
+                p5.setString(1, name);
+                p5.executeQuery();
+            }
+            long aika10 = System.nanoTime();
+            System.out.println("Aikaa kului pakettien hakemiseen: " + (aika10 - aika9) / 1e9 + " sekuntia");
+
+            //Thousand queries where events of some packages are retrieved
+            long aika11 = System.nanoTime();
+
+            PreparedStatement p6 = db.prepareStatement("SELECT Events.created_at, Locations.name, Events.description FROM Events, Locations, Packages WHERE Events.package_id = Packages.id AND Locations.id = Events.location_id AND Packages.scan_code = ? ");
+            for (int i = 1; i < 1001; i++) {
+                int random = ThreadLocalRandom.current().nextInt(1000);
+                String code = "PACKAGE" + random;
+                if (doesCodeAlreadyExistFromPackages(code)) {
+                    p6.setString(1, code);
+                    p6.executeQuery();
+                    /*ResultSet r = p6.executeQuery();
 
                 while (r.next()) {
                     System.out.println(r.getString("created_at") + ", " + r.getString("name") + ", " + r.getString("description"));
                 } */
-            } else {
-                i--;
-            }
+                } else {
+                    i--;
+                }
 
+            }
+            long aika12 = System.nanoTime();
+            System.out.println("Aikaa kului tapahtumien hakemiseen: " + (aika12 - aika11) / 1e9 + " sekuntia");
         }
-        long aika12 = System.nanoTime();
-        System.out.println("Aikaa kului tapahtumien hakemiseen: " + (aika12 - aika11) / 1e9 + " sekuntia");
+
     }
 
     public static void getNumberOfEventsFromLocationAtGivenDay(String name, String date) throws SQLException {
-        String[] arrOfStr = date.split("\\.");
-        if (arrOfStr[1].length() == 1) {
-            arrOfStr[1] = "0" + arrOfStr[1];
-        }
+        File file = new File("packagetracker.db");
 
-        if (arrOfStr[0].length() == 1) {
-            arrOfStr[0] = "0" + arrOfStr[0];
-        }
-
-        String modified_date = arrOfStr[0] + "." + arrOfStr[1] + "." + arrOfStr[2] + "%";
-
-        if (!doesValueExistAlreadyFromLocations(name)) {
-            System.out.println("Paikkaa " + name + " ei loytynyt!");
+        if (!file.exists()) {
+            System.out.println("Kantaa ei löydy, luo se ensin!");
         } else {
-            Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
-            PreparedStatement p = db.prepareStatement("SELECT COUNT(Events.id) FROM Events, Locations WHERE Events.location_id = Locations.id AND Locations.name = ? AND Events.created_at LIKE ? ");
-            p.setString(1, name);
-            p.setString(2, modified_date);
-            ResultSet r = p.executeQuery();
-
-            while (r.next()) {
-                System.out.println("Tapahtumien määrä: " + r.getInt("COUNT(Events.id)"));
+            int count = 0;
+            String[] dots = date.split("");
+            for (int i = 0; i < date.length(); i++) {
+                if (dots[i].matches(".*[.!?]")) {
+                    count++;
+                }
             }
-            db.close();
+            if (count == 2) {
+                String[] arrOfStr = date.split("\\.");
+                if (arrOfStr[1].length() == 1) {
+                    arrOfStr[1] = "0" + arrOfStr[1];
+                }
+
+                if (arrOfStr[0].length() == 1) {
+                    arrOfStr[0] = "0" + arrOfStr[0];
+                }
+
+                String modified_date = arrOfStr[0] + "." + arrOfStr[1] + "." + arrOfStr[2] + "%";
+
+                if (!doesValueExistAlreadyFromLocations(name)) {
+                    System.out.println("Paikkaa " + name + " ei loytynyt!");
+                } else {
+                    Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
+                    PreparedStatement p = db.prepareStatement("SELECT COUNT(Events.id) FROM Events, Locations WHERE Events.location_id = Locations.id AND Locations.name = ? AND Events.created_at LIKE ? ");
+                    p.setString(1, name);
+                    p.setString(2, modified_date);
+                    ResultSet r = p.executeQuery();
+
+                    while (r.next()) {
+                        System.out.println("Tapahtumien määrä: " + r.getInt("COUNT(Events.id)"));
+                    }
+                    db.close();
+                }
+            }
+            else {
+                System.out.println("Väärä päivämäärämuoto! Esim. 02.02.2020");
+            }
+
         }
 
     }
 
     public static boolean doesValueExistAlreadyFromLocations(String value) throws SQLException {
+
         Connection db = DriverManager.getConnection("jdbc:sqlite:packagetracker.db");
         PreparedStatement p = db.prepareStatement("SELECT name FROM Locations WHERE name=?");
         p.setString(1, value);
