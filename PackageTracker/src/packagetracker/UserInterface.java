@@ -139,7 +139,9 @@ public class UserInterface {
             s.execute("CREATE TABLE Events (id INTEGER PRIMARY KEY, description TEXT, created_at TEXT, location_id INTEGER REFERENCES Locations, package_id INTEGER REFERENCES Packages)");
             s.execute("CREATE INDEX idx_package_id ON Events (package_id)");
             System.out.println("Tietokanta luotu!");
+            
         }
+        
 
     }
 
@@ -399,11 +401,7 @@ public class UserInterface {
                 if (doesCodeAlreadyExistFromPackages(code)) {
                     p6.setString(1, code);
                     p6.executeQuery();
-                    /*ResultSet r = p6.executeQuery();
-
-                while (r.next()) {
-                    System.out.println(r.getString("created_at") + ", " + r.getString("name") + ", " + r.getString("description"));
-                } */
+                    
                 } else {
                     i--;
                 }
@@ -411,6 +409,7 @@ public class UserInterface {
             }
             long aika12 = System.nanoTime();
             System.out.println("Aikaa kului tapahtumien hakemiseen: " + (aika12 - aika11) / 1e9 + " sekuntia");
+            db.close();
         }
 
     }
